@@ -607,7 +607,7 @@ var Suite = function ( validatorjs, expect, AssertExtra ) {
               'bar@qux.com',
               'baz'
             ],
-            strings: [ {} ]
+            strings: [ {}, 123 ]
           },
           constraint = {
             foo: new Assert().NotNull(),
@@ -631,6 +631,7 @@ var Suite = function ( validatorjs, expect, AssertExtra ) {
         expect( result.strings[ 0 ] ).to.have.key( '0' );
         expect( result.strings[ 0 ][ 0 ] ).to.be.a( Violation );
         expect( result.strings[ 0 ][ 0 ].assert.__class__ ).to.be( 'IsString' );
+        expect( result.strings[ 0 ][ 1 ].assert.__class__ ).to.be( 'IsString' );
       } )
 
       it( 'Collection with assert array', function () {

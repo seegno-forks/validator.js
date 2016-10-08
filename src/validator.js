@@ -34,9 +34,6 @@
     * Validate binded object: validate( object, string ) || validate( object, [ string, string ] )
     */
     validate: function ( objectOrString, AssertsOrConstraintOrGroup, group ) {
-      if ( 'string' !== typeof objectOrString && 'object' !== typeof objectOrString )
-        throw new Error( 'You must validate an object or a string' );
-
       // string / array validation
       if ( 'string' === typeof objectOrString || _isArray(objectOrString) )
         return this._validateString( objectOrString, AssertsOrConstraintOrGroup, group );
