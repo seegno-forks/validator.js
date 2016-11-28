@@ -25,6 +25,7 @@ MIT - See LICENSE.md
   - [Validate string](#validate-a-string)
   - [Validate object](#validate-an-object)
   - [Validation groups](#validation-groups)
+  - [Validation mask](#validation-mask)
   - [Bind constraint to an object](#bind-a-constraint-to-an-object)
   - [Assert definition](#assert-definition)
   - [Constraint definition](#constraint-definition)
@@ -111,6 +112,24 @@ will return `true` in this case `{ firstname: [ Violation ], phone: [ Violation 
 There are two special groups: "Any" and "Default". Validating against `"Any"` group will validate
 against all Asserts, regardless their groups. Validating against `"Default"` group will only
 validate against Asserts that do not have a validation group.
+
+## Validation mask
+
+It's possible to return the validated objected filtered with the constraint keys using the `mask` option:
+
+```js
+var object = { foo: 'bar', qux: 'qix' },
+  constraint = { foo: is.equalTo( 'bar' ) };
+
+var result = validator.validate( object, constraint, {
+  mask: true
+} );
+
+console.log( result );
+// -> { foo: 'bar' }
+```
+
+If validation fails, all violations are returned instead.
 
 ## Bind a constraint to an object
 

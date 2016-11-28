@@ -102,18 +102,29 @@
 
       options = options || {};
 
+      var constraintInstance, result;
+
       if ( constraint instanceof Assert )
-        return constraint.check( object, options.group, object );
+        result = constraint.check( object, options.group, object );
+      else if ( constraint instanceof Constraint ) {
+        constraintInstance = constraint;
+        result = constraint.check( object, options, object );
+      } else {
+        constraintInstance = new Constraint( constraint );
+        result = constraintInstance.check( object, options );
+      }
 
+      if ( constraintInstance && options.mask && true === result )
+        return constraintInstance.mask( object );
 
-      if ( constraint instanceof Constraint )
-        return constraint.check( object, options, object );
-
-      return new Constraint( constraint ).check( object, options );
+      return result;
     },
 
     _validateBindedObject: function ( object, options ) {
-      return object[ this.bindingKey ].check( object, options, object);
+      var constraint = object[ this.bindingKey ];
+      var result = constraint.check( object, options, object);
+
+      return options && options.mask && result === true ? constraint.mask( object ) : result;
     }
   };
 
@@ -286,6 +297,42 @@
       this.nodes = _nodes;
 
       return this;
+    },
+
+    mask: function ( object ) {
+      if ( ! _isPlainObject( object ) )
+        throw new Error('Mask expects a plain object to be provided');
+
+      var result = {};
+
+      for ( var node in this.nodes ) {
+        // Skip non existent key.
+        if ( ! object.hasOwnProperty( node ) )
+          continue;
+
+        var constraint = this.nodes[ node ];
+        var value = object[ node ];
+
+        if ( constraint instanceof Constraint ) {
+          // Skip value that is not an object and has deeper constraints.
+          if ( ! _isPlainObject( value ) )
+            continue;
+
+          value = constraint.mask( value );
+        } else if ( _isArray( constraint ) ) {
+          for ( innerConstraint of constraint ) {
+            if ( innerConstraint instanceof Constraint ) {
+              value = innerConstraint.mask( value );
+
+              break;
+            }
+          }
+        }
+
+        result[node] = value;
+      }
+
+      return result;
     },
 
     _bootstrap: function ( data ) {

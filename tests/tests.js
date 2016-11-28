@@ -617,8 +617,6 @@ var Suite = function ( validatorjs, expect, AssertExtra ) {
 
         var result = validator.validate( object, constraint );
 
-        console.log(require('util').inspect(result, { depth: null }));
-
         expect( result ).to.have.key( 'foo' );
         expect( result ).to.have.key( 'items' );
         expect( result.items[ 0 ] ).to.have.key( '0' );
@@ -1024,6 +1022,67 @@ var Suite = function ( validatorjs, expect, AssertExtra ) {
         expect( constraint.has( 'foo' ) ).to.be( true );
         expect( constraint.has( 'bar' ) ).to.be( true );
       } )
+
+      describe( 'mask', function () {
+        it( 'should throw an error if given argument is not a plain object', function () {
+          try {
+            new Constraint().mask( 'foo' );
+
+            expect().fails();
+          } catch ( err ) {
+            expect( err.message ).to.be( 'Mask expects a plain object to be provided' );
+          }
+        } )
+
+        it( 'should mask keys with plain asserts', function () {
+            var object = { foo: 'bar' };
+            var asserts = { foo: new Assert().Required() };
+
+            expect( new Constraint( asserts ).mask( object ) ).to.eql( { foo: 'bar' } );
+        } )
+
+        it( 'should omit keys which are not mapped', function () {
+            var object = { bar: 'biz' };
+            var asserts = { foo: new Assert().Required() };
+
+            expect( new Constraint( asserts ).mask( object ) ).to.eql( {} );
+        } )
+
+        it( 'sould mask nested objects', function () {
+          var object = { foo: { bar: 'biz', qux: 'qix' } };
+          var asserts = { foo: { bar: new Assert().Required() } };
+
+          expect( new Constraint( asserts ).mask( object ) ).to.eql( { foo: { bar: 'biz' } } );
+        } )
+
+        it( 'sould omit keys which have nested constraints but have non object values', function () {
+          var object = { foo: 'biz' };
+          var asserts = { foo: { bar: new Assert().Required() } };
+
+          expect( new Constraint( asserts ).mask( object ) ).to.eql( {} );
+        } )
+
+        it( 'sould mask nested objects with nested constraints', function () {
+          var object = { foo: { bar: 'biz' } };
+          var asserts = { foo: new Constraint( { bar: new Assert().Required() } ) };
+
+          expect( new Constraint( asserts ).mask( object ) ).to.eql( { foo: { bar: 'biz' } } );
+        } )
+
+        it( 'should mask keys with an asserts array', function () {
+            var object = { foo: 'bar' };
+            var asserts = { foo: [ new Assert().Required(), new Assert().NotBlank() ] };
+
+            expect( new Constraint( asserts ).mask( object ) ).to.eql( { foo: 'bar' } );
+        } )
+
+        it( 'should mask nested keys of an asserts array that includes a constraint', function () {
+            var object = { foo: { bar: 'biz' } };
+            var asserts = { foo: [ new Assert().Required(), new Constraint( { bar: new Assert().NotBlank() } ) ] };
+
+            expect( new Constraint(asserts).mask( object ) ).to.eql( { foo: { bar: 'biz' } } );
+        } )
+      } )
     } )
 
     describe( 'Validator', function () {
@@ -1400,6 +1459,19 @@ var Suite = function ( validatorjs, expect, AssertExtra ) {
             expect( result.bar ).to.have.key( 'qux' );
             expect( result.bar.qux ).to.have.key( 'bux' );
         } )
+
+        it( 'should return masked object with constraint keys', function() {
+          var result = validator.validate( {
+            foo: 'bar',
+            qux: 'qix'
+          }, {
+            foo: new Assert().EqualTo( 'bar' )
+          }, {
+            mask: true
+          } );
+
+          expect( result ).to.eql( { foo: 'bar' } );
+        } )
       } )
 
       describe( 'Binded object validation', function () {
@@ -1427,6 +1499,20 @@ var Suite = function ( validatorjs, expect, AssertExtra ) {
 
           var result = validator.bind( object, constraint ).validate( object );
           expect( result ).to.have.key( 'foo' );
+        } )
+
+        it( 'should return masked object with constraint keys', function() {
+          var object = { foo: 'bar', qux: 'qix' };
+
+          validator.bind(object, {
+            foo: new Assert().EqualTo( 'bar' )
+          } );
+
+          var result = validator.validate(object, {
+            mask: true
+          });
+
+          expect( result ).to.eql( { foo: 'bar' } );
         } )
       } )
 
